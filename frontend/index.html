@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synapse</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="static/css/index.css">
+    <script src="static/js/index.js" defer></script>
+</head>
+
+<body>
+    <aside id="sidebar">
+        <div id="synapse">
+            <img src="static/images/synapse.png" alt="Synapse"/>
+            <h3>Welcome to Synapse</h3>
+        </div>
+        <button class="new-chat-btn" onclick="createNewChat()">
+            <img src="static/images/chat.png"> Start New Chat
+        </button>
+        <div id="past-chats">
+            <article class="text-heading">
+                <img src="static/images/chatting.png"/> 
+                <h4>Past Chats</h4>
+            </article>
+            <ul id="chat-list">
+                <li class="chat-item">Previous Conversation 1</li>
+                <li class="chat-item">Python Singleton Help</li>
+            </ul>
+        </div>
+    </aside>
+
+    <main id="main-panel">
+        <section id="conversation-wrapper">
+            <div id="messages-container">
+                <div id="welcome-message">
+                    <img src="static/images/synapse.png" alt="Synapse Logo"/>
+                    <p>Hello, How can I help you today?</p>
+                </div>
+            </div>
+
+            <div id="input-area">
+                <div class="input-container">
+                    <input type="text" id="user-input" placeholder="Send a message...">
+                    <button id="send-btn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

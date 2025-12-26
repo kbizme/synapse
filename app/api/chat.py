@@ -1,17 +1,19 @@
 from fastapi import APIRouter
 from app.agents import agents
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import ChatRequest, ChatResponse, ChatResetRequest
 from app.core import memory
 
 router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
-    completion = agents.get_completion(request.message)
-    return ChatResponse(reply=completion)
+    completion = agents.get_completion(chat_id=request.chat_id, 
+                                       prompt=request.message)
+    return ChatResponse(chat_id=request.chat_id, reply=completion)
 
 
 @router.post("/reset")
-def reset():
-    memory.reset_memory()
+def reset(request: ChatResetRequest):
+    chat_manager = memory.ChatManager()
+    chat_manager.reset_chat(request.chat_id)
     return {"status": "ok"}
