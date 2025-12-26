@@ -10,7 +10,8 @@ load_dotenv()
 
 
 # llm model
-llm = ChatGroq(model=config.DEFAULT_MODEL, temperature=config.DEFAULT_TEMPERATURE)
+llm = ChatGroq(model=config.DEFAULT_MODEL, 
+               temperature=config.DEFAULT_TEMPERATURE)
 
 
 # agent
