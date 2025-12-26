@@ -1,7 +1,7 @@
 from langchain.messages import HumanMessage, AIMessage
 from app.core.persistence.repositories import ChatRepository, MessageRepository
 from app.core.memory import ChatManager
-from app.core.persistence import sessions
+from app.core.persistence.db_sessions import get_session
 from app.agents import agents
 
 
@@ -10,7 +10,7 @@ class ChatService:
         self.chat_manager = ChatManager()
     
     def handle_user_message(self, chat_id: str, prompt: str) -> str:
-        with sessions.get_session() as session:
+        with get_session() as session:
             assert session is not None
             if ChatRepository.get_by_id(db_session=session, chat_id=chat_id) is None:
                 ChatRepository.create(db_session=session, chat_id=chat_id, title=prompt[:60])
@@ -32,7 +32,7 @@ class ChatService:
             
         
         if ai_message:
-            with sessions.get_session() as session:
+            with get_session() as session:
                 assert session is not None
                 MessageRepository.create(
                     db_session=session,

@@ -1,7 +1,7 @@
 from app.core import config
 from langchain.messages import HumanMessage, AIMessage
 from app.core.persistence.repositories import MessageRepository
-from app.core.persistence import sessions
+from app.core.persistence import db_sessions
 
 
 
@@ -43,9 +43,9 @@ class ChatManager:
     
     def _refill_chat_from_db(self, chat_id: str):
         chat_memory = ChatMemory()
-        with sessions.get_session() as session:
+        with db_sessions.get_session() as session:
             assert session is not None
-            messages = MessageRepository.get_by_chat_id(db_session=session, chat_id=chat_id)
+            messages = MessageRepository.get_messages_by_chat_id(db_session=session, chat_id=chat_id)
             for message in messages:
                 if message.role == "user":
                     chat_memory.add_message(message=HumanMessage(content=message.content))

@@ -10,6 +10,10 @@ class ChatRepository:
     
     
     @staticmethod
+    def get_all(db_session: Session):
+        return db_session.query(Chat).order_by(Chat.updated_at.desc()).all()
+    
+    @staticmethod
     def create(db_session: Session, chat_id: str, title: str | None) -> Chat:
         chat = Chat(id=chat_id, title=title)
         db_session.add(chat)
@@ -25,7 +29,7 @@ class MessageRepository:
     
     
     @staticmethod
-    def get_by_chat_id(db_session: Session, chat_id: str) -> list[Message]:
+    def get_messages_by_chat_id(db_session: Session, chat_id: str) -> list[Message]:
         return (db_session
                 .query(Message)
                 .filter(Message.chat_id == chat_id)
