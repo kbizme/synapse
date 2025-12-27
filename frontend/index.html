@@ -4,29 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Synapse</title>
-    <link rel="icon" href="favicon.ico">
-    <link rel="stylesheet" href="static/css/index.css">
-    <script src="static/js/index.js" defer></script>
+    <link rel="icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/index.css">
+    <script src="/static/js/index.js" defer></script>
 </head>
 
 <body>
     <aside id="sidebar">
         <div id="synapse">
-            <img src="static/images/synapse.png" alt="Synapse"/>
+            <img src="/static/images/synapse.png" alt="Synapse"/>
             <h3>Welcome to Synapse</h3>
         </div>
         <button class="new-chat-btn" onclick="createNewChat()">
-            <img src="static/images/chat.png"> Start New Chat
+            <img src="/static/images/chat.png"> Start New Chat
         </button>
         <div id="past-chats">
             <article class="text-heading">
-                <img src="static/images/chatting.png"/> 
-                <h4>Past Chats</h4>
+                <img src="/static/images/chatting.png"/> 
+                <h4>Recent Chats</h4>
             </article>
             <ul id="chat-list">
-                <li class="chat-item">Previous Conversation 1</li>
-                <li class="chat-item">Python Singleton Help</li>
+                <li class="chat-item">No chats yet</li>
             </ul>
+            <p id="no-chats-banner">No chats yet.</p>
         </div>
     </aside>
 
@@ -34,9 +34,13 @@
         <section id="conversation-wrapper">
             <div id="messages-container">
                 <div id="welcome-message">
-                    <img src="static/images/synapse.png" alt="Synapse Logo"/>
+                    <img src="/static/images/synapse.png" alt="Synapse Logo"/>
                     <p>Hello, How can I help you today?</p>
                 </div>
+            <!--    sample conversation
+                <div class="message-bubble user-msg">hi</div>
+                <div class="message-bubble assistant-msg">hello</div> 
+            -->
             </div>
 
             <div id="input-area">
@@ -48,4 +52,5 @@
         </section>
     </main>
 </body>
+<script src="/static/js/marked.js" defer></script>
 </html>
