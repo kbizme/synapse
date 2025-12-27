@@ -75,6 +75,10 @@ function sendMessage() {
         aiDiv.innerHTML = marked.parse(data.reply, {breaks: true, gfm: true});
         messagesContainer.appendChild(aiDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+
+        // updating the chat lists
+        LoadChatLists();
     })
     .catch(err => {
         console.error(err);
@@ -114,6 +118,7 @@ async function LoadChatLists() {
     const res = await fetch("http://localhost:8000/all-chats");
     const data = await res.json();
     RenderChatLists(data.chats);
+    HighlightActiveChat();
 }
 
 function RenderChatLists(all_chats){
@@ -134,7 +139,7 @@ function RenderChatLists(all_chats){
         const item = document.createElement('li')
         item.textContent = chat.title;
         item.classList.add('chat-item');
-        item.dataset.uuid = chat.id;
+        item.setAttribute('id', chat.id);
         item.setAttribute('title', chat.title);
         chatUl.appendChild(item);
         item.addEventListener('click', (e) => {
@@ -156,8 +161,33 @@ function ClearActiveChats(){
 }
 
 
+function HighlightActiveChat(chat_id=undefined){
+    // retrieving the chat id
+    if (!chat_id){
+        chat_id = CURRENT_CHAT_ID;
+        if (!chat_id){
+            const params = new URLSearchParams(window.location.search);
+            chat_id = params.get('chat_id');
+        };
+    }
+    try{
+        document.getElementById(chat_id).classList.add('active');
+    }catch(err){
+        console.error(err);
+    }
+}
+
 
 function LoadCurrentChats(chat_id){
+    // updating current chat id
+    CURRENT_CHAT_ID = chat_id;
+
+    // making the current chat active
+    // document.getElementById(chat_id).classList.add('active');
+    HighlightActiveChat(chat_id);
+
+
+
     // updating the URL (no reload)
     history.pushState(
         { chat_id },
@@ -183,7 +213,7 @@ function RenderCurrentChatMessages(chat_data){
     }
 
     // updating the current chat id
-    CURRENT_CHAT_ID = chat_data.chat_id;
+    CURRENT_CHAT_ID = chat_data.id;
     
     // clearing the message container
     messagesContainer.innerHTML = '';

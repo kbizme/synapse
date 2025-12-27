@@ -15,7 +15,10 @@ class ChatService:
             if ChatRepository.get_by_id(db_session=session, chat_id=chat_id) is None:
                 ChatRepository.create(db_session=session, chat_id=chat_id, title=prompt[:60])
             
+            # entering data into the messages table
             MessageRepository.create(db_session=session, chat_id=chat_id, role="user", content=prompt)
+            # updating related chat table entry
+            ChatRepository.touch(db_session=session, chat_id=chat_id)
         
         # updating in-memory memory
         chat = self.chat_manager.get_chat(chat_id=chat_id)
@@ -40,6 +43,9 @@ class ChatService:
                     role="assistant",
                     content=content,
                 )
+                # updating related chat table entry
+                ChatRepository.touch(db_session=session, chat_id=chat_id)
+        
         
         # updating in-memory memory
         chat.add_message(ai_message)

@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from app.core.persistence.models import Chat, Message
+from sqlalchemy.sql import func
+from sqlalchemy import update
 
 
 
@@ -18,7 +20,18 @@ class ChatRepository:
         chat = Chat(id=chat_id, title=title)
         db_session.add(chat)
         return chat
-
+    
+    @staticmethod
+    def touch(db_session: Session, chat_id: str):
+        db_session.execute(
+            update(Chat)
+            .where(Chat.id == chat_id)
+            .values(updated_at=func.now())
+        )
+        
+        
+        
+        
 
 class MessageRepository:
     @staticmethod
