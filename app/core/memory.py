@@ -35,10 +35,6 @@ class ChatManager:
         return cls._instance
     
 
-    def is_chat_loaded(self, chat_id: str):
-        return chat_id in self.all_chats
-    
-    
     def get_chat(self, chat_id: str):
         if chat_id not in self.all_chats:
             self.all_chats[chat_id] = self._refill_chat_from_db(chat_id=chat_id)

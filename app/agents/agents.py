@@ -11,7 +11,8 @@ load_dotenv()
 
 # llm model
 llm = ChatGroq(model=config.DEFAULT_MODEL, 
-               temperature=config.DEFAULT_TEMPERATURE)
+               temperature=config.DEFAULT_TEMPERATURE,
+               streaming=True)
 
 
 # agent
@@ -28,12 +29,11 @@ def get_completion(all_messages: list):
 
 
 def get_completion_stream(all_messages: list):
-    for chunk in agent.stream({"messages": all_messages}):
-        if isinstance(chunk, AIMessageChunk):
-            content = chunk.content
+    for msg, metadata in agent.stream(input={"messages": all_messages}, stream_mode="messages"):
+        if isinstance(msg, (AIMessageChunk, BaseMessageChunk)):
+            content = msg.content
             if isinstance(content, str) and content:
                 yield content
             elif isinstance(content, list):
                 yield "".join(str(x) for x in content)
-        elif isinstance(chunk, str):
-            yield chunk
+

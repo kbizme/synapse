@@ -20,11 +20,11 @@
         <button class="new-chat-btn" onclick="createNewChat()">
             <img src="/static/images/chat.png"> Start New Chat
         </button>
-        <div id="past-chats">
-            <article class="text-heading">
+        <article class="text-heading">
                 <img src="/static/images/chatting.png"/> 
                 <h4>Recent Chats</h4>
-            </article>
+        </article>
+        <div id="past-chats">
             <ul id="chat-list">
                 <li class="chat-item">No chats yet</li>
             </ul>
@@ -48,7 +48,7 @@
             <div id="input-area">
                 <div class="input-container">
                     <input type="text" id="user-input" placeholder="Send a message...">
-                    <button id="send-btn" onclick="sendMessage()">➤</button>
+                    <button id="send-btn" onclick="HandleSend()">➤</button>
                 </div>
             </div>
         </section>

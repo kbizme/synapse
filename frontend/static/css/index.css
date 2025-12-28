@@ -125,12 +125,17 @@ article.text-heading img{
     height: 20px;
 }
 
+#past-chats{
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-top: -20px;
+}
+
 
 #chat-list {
     flex-grow: 1;
     overflow-y: auto;
     list-style: none;
-    margin-top: 10px;
 }
 
 .chat-item {
@@ -183,30 +188,40 @@ article.text-heading img{
     flex-grow: 1;
     overflow-y: auto;
     padding: 20px 0;
-    display: flex;
-    flex-direction: column;
+    display: block;
+    position: relative;
     scrollbar-gutter: stable;
     scrollbar-width: none;
-    align-items: stretch;
+    scroll-behavior: auto;
+}
+
+#chat-spacer{
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
 }
 
 .message-bubble {
     max-width: 600px;
     width: 90%;
     padding: 20px;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     color: #f3f3f3;
+    clear: both;
+    display: block;
 }
 
 .user-msg { 
-    width: auto;
+    width: fit-content;
     background-color: #242424; 
     border-radius: 10px;
-    align-self: flex-end;
+    margin-left: auto;
+    margin-right: 10px;
 }
 .assistant-msg { 
     border-radius: 5px; 
-    align-self: flex-start;
+    margin-left: 10px;
+    margin-right: auto;
     line-height: 1.4;
     white-space: pre-wrap;
 }
@@ -278,10 +293,10 @@ article.text-heading img{
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #565869; 
+    background: #3a3a42; 
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #acacbe;
+    background: #767685;
 }

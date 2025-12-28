@@ -21,12 +21,13 @@ class ChatService:
             ChatRepository.touch(db_session=session, chat_id=chat_id)
         
         # updating in-memory memory
-        chat = self.chat_manager.get_chat(chat_id)
-        if not self.chat_manager.is_chat_loaded(chat_id):
-            chat.add_message(HumanMessage(content=prompt)) 
+        current_chat = self.chat_manager.get_chat(chat_id)
+        last_message_in_memory = current_chat.get_messages()[-1]
+        if not isinstance(last_message_in_memory, HumanMessage):
+            current_chat.add_message(HumanMessage(content=prompt)) 
         
         # calling the ai agents
-        ai_message = agents.get_completion(all_messages=chat.get_messages())
+        ai_message = agents.get_completion(all_messages=current_chat.get_messages())
         
         # normalizing ai output
         content = ai_message.content
@@ -46,11 +47,11 @@ class ChatService:
                 # updating related chat table entry
                 ChatRepository.touch(db_session=session, chat_id=chat_id)
         
-        
         # updating in-memory memory
-        chat.add_message(ai_message)
+        current_chat.add_message(ai_message)
         # returning the completion
         return content
+    
     
     
     def handle_user_message_stream(self, chat_id: str, prompt: str):
@@ -62,9 +63,10 @@ class ChatService:
             MessageRepository.create(session, chat_id, "user", prompt)
             ChatRepository.touch(session, chat_id)
 
-
+        # updating in-memory memory
         current_chat = self.chat_manager.get_chat(chat_id)
-        if not self.chat_manager.is_chat_loaded(chat_id):
+        last_message_in_memory = current_chat.get_messages()[-1]
+        if not isinstance(last_message_in_memory, HumanMessage):
             current_chat.add_message(HumanMessage(content=prompt)) 
 
         def token_stream():

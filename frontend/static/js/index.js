@@ -4,6 +4,7 @@ const welcomeMessage = document.getElementById('welcome-message');
 const chatUl = document.getElementById('chat-list');
 const noChatsBanner = document.getElementById('no-chats-banner');
 
+
 let CURRENT_CHAT_ID;
 
 
@@ -25,6 +26,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+// to handle the spacer when resizing, trivial
+window.addEventListener('resize', () => {
+    const spacer = document.getElementById('chat-spacer');
+    if (spacer && spacer.style.height !== '0px') {
+        spacer.style.height = `${messagesContainer.clientHeight}px`;
+    }
+});
 
 // Allow 'Enter' key to send
 input.addEventListener('keypress', (e) => {
@@ -53,28 +61,29 @@ async function HandleSend(){
     // clearing input text box
     input.value = '';
 
+    // updating the URL (no reload)
+    history.pushState(
+        { CURRENT_CHAT_ID },
+        "",
+        `/?chat_id=${CURRENT_CHAT_ID}`
+    );
+
     // calling the appropriate sendmessage function
-    await sendMessageStreaming(text);
+    await SendMessageStreaming(text);
     // SendMessage(text);
 
     // updating the chat lists
     setTimeout(()=>{
         LoadChatLists();
-    }, 1000);
+    }, 500);
 }
 
 
 
 // send message
 function SendMessage(text) {
-    // Add user message
-    const userDiv = document.createElement('div');
-    userDiv.className = 'message-bubble user-msg';
-    userDiv.innerText = text;
-    messagesContainer.appendChild(userDiv);
-
-    input.value = '';
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // rendering user message
+    RenderUserMessage(text);
 
     // sending the api request
     fetch("http://localhost:8000/chat", {
@@ -186,7 +195,10 @@ function HighlightActiveChat(chat_id=undefined){
     }
     try{
         if (chat_id){
-            document.getElementById(chat_id).classList.add('active');
+            const currentChatLi = document.getElementById(chat_id)
+            currentChatLi.classList.add('active');
+            document.title = currentChatLi.getAttribute('title');
+
         }
     }catch(err){
         console.error(err);
@@ -199,7 +211,6 @@ function LoadCurrentChats(chat_id){
     CURRENT_CHAT_ID = chat_id;
 
     // making the current chat active
-    // document.getElementById(chat_id).classList.add('active');
     HighlightActiveChat(chat_id);
 
 
@@ -217,6 +228,7 @@ function LoadCurrentChats(chat_id){
     .then(data => {
         document.title = data.chat_title;
         RenderCurrentChatMessages(data);
+
     });
 }
 
@@ -241,18 +253,22 @@ function RenderCurrentChatMessages(chat_data){
         div.innerHTML = marked.parse(msg.content, {breaks: true, gfm: true});
         messagesContainer.appendChild(div);
     });
+    ScrollToBottom();
 
 }
 
 
 //////////////////// STREAMING RESPONSE ////////////////////
-async function sendMessageStreaming(prompt){
+async function SendMessageStreaming(prompt){
     RenderUserMessage(prompt);
 
     // creating assistant message container
     const assistantDiv = document.createElement('div');
     assistantDiv.className = 'message-bubble assistant-msg';
-    messagesContainer.appendChild(assistantDiv);
+    
+    // inserting the assistant bubble before the spacer
+    const spacer = document.getElementById('chat-spacer');
+    messagesContainer.insertBefore(assistantDiv, spacer);
 
     // start streaming
     const response = await fetch('http://localhost:8000/chat/stream', {
@@ -279,11 +295,17 @@ async function sendMessageStreaming(prompt){
         }
 
         assistantDiv.innerHTML = marked.parse(assistantText, {breaks: true, gfm: true});
-        scrollToBottom();
+    }
+
+    // removing the spacer after response is complete
+    if (spacer) {
+        spacer.style.transition = 'height 0.5s ease';
+        spacer.style.height = '20px';
+        // removing the spacer after transition
+        setTimeout(() => spacer.remove(), 500);
     }
 
 }
-
 
 
 
@@ -293,8 +315,32 @@ function RenderUserMessage(text){
     userDiv.className = 'message-bubble user-msg';
     userDiv.innerText = text;
     messagesContainer.appendChild(userDiv);
+    input.value = '';
+    
+    // spacer 
+    let spacer = document.getElementById('chat-spacer');
+    if (spacer) spacer.remove(); 
+    
+    spacer = document.createElement('div');
+    spacer.id = 'chat-spacer';
+
+    // setting height to slightly less than container to keep the message perfectly at top
+    const spacerGap = 200;
+    spacer.style.height = `${messagesContainer.clientHeight - spacerGap}px`;
+    messagesContainer.appendChild(spacer);
+
+    // forcing the browser to recalculate the height
+    setTimeout(() => {
+        const gap = 40;
+        const targetTop = userDiv.offsetTop - gap;
+        messagesContainer.scrollTo({
+            top: targetTop,
+            behavior: 'smooth' 
+        });
+    }, 0);
+
 }
 
-function scrollToBottom() {
+function ScrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
