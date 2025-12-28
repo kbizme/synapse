@@ -28,12 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Allow 'Enter' key to send
 input.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') HandleSend();
 });
 
 
-// send message
-function sendMessage() {
+async function HandleSend(){
     const text = input.value.trim();
     if (!text) return;
 
@@ -48,8 +47,26 @@ function sendMessage() {
     }
 
     // removing the welcome box
-    if (welcomeMessage) welcomeMessage.remove();
-    
+    const welcome = document.getElementById("welcome-message");
+    if (welcome) welcome.remove();
+
+    // clearing input text box
+    input.value = '';
+
+    // calling the appropriate sendmessage function
+    await sendMessageStreaming(text);
+    // SendMessage(text);
+
+    // updating the chat lists
+    setTimeout(()=>{
+        LoadChatLists();
+    }, 1000);
+}
+
+
+
+// send message
+function SendMessage(text) {
     // Add user message
     const userDiv = document.createElement('div');
     userDiv.className = 'message-bubble user-msg';
@@ -75,10 +92,6 @@ function sendMessage() {
         aiDiv.innerHTML = marked.parse(data.reply, {breaks: true, gfm: true});
         messagesContainer.appendChild(aiDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-
-        // updating the chat lists
-        LoadChatLists();
     })
     .catch(err => {
         console.error(err);
@@ -91,8 +104,8 @@ function sendMessage() {
 function createNewChat() {
     // clearing active chat marker
     ClearActiveChats();
-    // initializing new chat id
-    CURRENT_CHAT_ID = crypto.randomUUID();
+    // resetting the cyrrent chat id
+    CURRENT_CHAT_ID = null;
     // clearing URL 
     history.pushState({}, "", "/");
 
@@ -117,11 +130,10 @@ function createNewChat() {
 async function LoadChatLists() {
     const res = await fetch("http://localhost:8000/all-chats");
     const data = await res.json();
-    RenderChatLists(data.chats);
-    HighlightActiveChat();
+    await RenderChatLists(data.chats);
 }
 
-function RenderChatLists(all_chats){
+async function RenderChatLists(all_chats){
     chatUl.innerHTML = '';
     if (!all_chats || all_chats.length === 0){
         console.log('no chats found');
@@ -149,7 +161,9 @@ function RenderChatLists(all_chats){
             LoadCurrentChats(chat.id);
         });
     });
-        
+    
+    // highliting current chat
+    HighlightActiveChat();
 }
 
 
@@ -171,7 +185,9 @@ function HighlightActiveChat(chat_id=undefined){
         };
     }
     try{
-        document.getElementById(chat_id).classList.add('active');
+        if (chat_id){
+            document.getElementById(chat_id).classList.add('active');
+        }
     }catch(err){
         console.error(err);
     }
@@ -226,4 +242,59 @@ function RenderCurrentChatMessages(chat_data){
         messagesContainer.appendChild(div);
     });
 
+}
+
+
+//////////////////// STREAMING RESPONSE ////////////////////
+async function sendMessageStreaming(prompt){
+    RenderUserMessage(prompt);
+
+    // creating assistant message container
+    const assistantDiv = document.createElement('div');
+    assistantDiv.className = 'message-bubble assistant-msg';
+    messagesContainer.appendChild(assistantDiv);
+
+    // start streaming
+    const response = await fetch('http://localhost:8000/chat/stream', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            chat_id: CURRENT_CHAT_ID,
+            message: prompt
+        })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let assistantText = '';
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+            const chunk = decoder.decode(value, { stream: true });
+            assistantText += chunk;
+        }
+
+        assistantDiv.innerHTML = marked.parse(assistantText, {breaks: true, gfm: true});
+        scrollToBottom();
+    }
+
+}
+
+
+
+
+function RenderUserMessage(text){
+    // Add user message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'message-bubble user-msg';
+    userDiv.innerText = text;
+    messagesContainer.appendChild(userDiv);
+}
+
+function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }

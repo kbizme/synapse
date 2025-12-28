@@ -34,6 +34,10 @@ class ChatManager:
             cls._instance.all_chats = dict()
         return cls._instance
     
+
+    def is_chat_loaded(self, chat_id: str):
+        return chat_id in self.all_chats
+    
     
     def get_chat(self, chat_id: str):
         if chat_id not in self.all_chats:

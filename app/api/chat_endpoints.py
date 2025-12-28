@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
-from app.agents import agents
 from app.schemas.chat import ChatRequest, ChatResponse, ChatResetRequest
 from app.core.memory import ChatManager
 from app.core.chat_service import ChatService
 from app.core.persistence.repositories import ChatRepository, MessageRepository
 from app.core.persistence.db_sessions import get_session
+from fastapi.responses import StreamingResponse
+
 
 
 
@@ -16,6 +17,16 @@ router = APIRouter()
 def chat(request: ChatRequest):
     completion = ChatService().handle_user_message(chat_id=request.chat_id, prompt=request.message)
     return ChatResponse(chat_id=request.chat_id, reply=completion)
+
+
+
+@router.post("/chat/stream")
+def chat_stream(request: ChatRequest) -> StreamingResponse:
+    stream = ChatService().handle_user_message_stream(chat_id=request.chat_id, prompt=request.message)
+    return StreamingResponse(stream, media_type="text/plain")
+
+
+
 
 
 @router.get("/chat/{chat_id}")

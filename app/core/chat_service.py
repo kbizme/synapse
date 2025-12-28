@@ -21,9 +21,9 @@ class ChatService:
             ChatRepository.touch(db_session=session, chat_id=chat_id)
         
         # updating in-memory memory
-        chat = self.chat_manager.get_chat(chat_id=chat_id)
-        chat.add_message(HumanMessage(content=prompt))
-        
+        chat = self.chat_manager.get_chat(chat_id)
+        if not self.chat_manager.is_chat_loaded(chat_id):
+            chat.add_message(HumanMessage(content=prompt)) 
         
         # calling the ai agents
         ai_message = agents.get_completion(all_messages=chat.get_messages())
@@ -49,5 +49,43 @@ class ChatService:
         
         # updating in-memory memory
         chat.add_message(ai_message)
-        
+        # returning the completion
         return content
+    
+    
+    def handle_user_message_stream(self, chat_id: str, prompt: str):
+        with get_session() as session:
+            assert session is not None
+            if ChatRepository.get_by_id(session, chat_id) is None:
+                ChatRepository.create(session, chat_id, title=prompt[:60])
+            # inserting the new message
+            MessageRepository.create(session, chat_id, "user", prompt)
+            ChatRepository.touch(session, chat_id)
+
+
+        current_chat = self.chat_manager.get_chat(chat_id)
+        if not self.chat_manager.is_chat_loaded(chat_id):
+            current_chat.add_message(HumanMessage(content=prompt)) 
+
+        def token_stream():
+            full_content = ""
+
+            for token in agents.get_completion_stream(all_messages=current_chat.get_messages()):
+                full_content += token
+                yield token
+
+            if not full_content.strip():
+                return
+
+            with get_session() as session:
+                MessageRepository.create(
+                    session, chat_id, "assistant", full_content
+                )
+                ChatRepository.touch(session, chat_id)
+
+            current_chat.add_message(AIMessage(content=full_content))
+
+        return token_stream()
+            
+            
+

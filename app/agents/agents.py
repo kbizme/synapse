@@ -2,7 +2,7 @@ from langchain.agents import create_agent
 from langchain_groq import ChatGroq
 from app.core import config
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, BaseMessageChunk, AIMessageChunk
 
 
 # loading env variables
@@ -23,5 +23,17 @@ def get_completion(all_messages: list):
     last_message = ai_response['messages'][-1]
     if not isinstance(last_message, AIMessage):
         raise ValueError("Last message is not an AIMessage")
-    
+    # returnign the ai completion
     return last_message
+
+
+def get_completion_stream(all_messages: list):
+    for chunk in agent.stream({"messages": all_messages}):
+        if isinstance(chunk, AIMessageChunk):
+            content = chunk.content
+            if isinstance(content, str) and content:
+                yield content
+            elif isinstance(content, list):
+                yield "".join(str(x) for x in content)
+        elif isinstance(chunk, str):
+            yield chunk
