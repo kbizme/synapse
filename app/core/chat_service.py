@@ -5,7 +5,7 @@ from app.core.persistence.db_sessions import get_session
 from app.agents import agents
 from app.tools.registry import TOOL_REGISTRY
 import json
-
+from app.core import config
 
 
 
@@ -27,58 +27,52 @@ class ChatService:
         if not isinstance(last_message_in_memory, HumanMessage):
             current_chat.add_message(HumanMessage(content=prompt)) 
 
+        # default config initialization
+        assistant_type = config.DEFAULT_ASSISTANT_TYPE
+        extra_context = None
+        
+        # dynamic intent detection
+        # TODO: RAG
+        
         def token_stream():
             history = current_chat.get_messages()
-            iteration = 0
-            
-            while True:
-                iteration += 1
-                print(f"\n--- [DEBUG ITERATION {iteration}] ---")
-                
-                # Print History State for Debugging
-                for i, m in enumerate(history):
-                    t_calls = getattr(m, 'tool_calls', [])
-                    t_id = getattr(m, 'tool_call_id', 'N/A')
-                    print(f"  Msg {i}: {type(m).__name__} | Tools: {len(t_calls) if t_calls else 0} | T_ID: {t_id}")
 
+            while True:
                 full_content = ""
                 tool_calls = []
 
-                # --- STEP 1: ASK LLM & STREAM ---
+                # --- STEP 1: GENERATE & STREAM ---
                 try:
-                    for chunk in agents.get_stream(history):
-                        # Capture tool calls first
+                    for chunk in agents.get_stream(messages=history, asssitant_type=assistant_type, extra_context=extra_context):
+                        # collecting tool metadata
                         if chunk.tool_calls:
-                            print(f"  --> Received Tool Call Chunk: {chunk.tool_calls}")
                             tool_calls.extend(chunk.tool_calls)
                         
-                        # Process content
-                        if chunk.content:
+                        # extracting and filtering contents
+                        chunk_data = chunk.content
+                        
+                        if chunk_data:
                             content_to_append = ""
-                            if isinstance(chunk.content, str):
-                                content_to_append = chunk.content
-                            elif isinstance(chunk.content, list):
-                                for part in chunk.content:
+                            if isinstance(chunk_data, str):
+                                content_to_append = chunk_data
+                            elif isinstance(chunk_data, list):
+                                for part in chunk_data:
                                     if isinstance(part, str): content_to_append += part
                                     elif isinstance(part, dict) and "text" in part: content_to_append += part["text"]
 
                             if content_to_append:
                                 full_content += content_to_append
                                 
-                                # FIX: Only yield to FastAPI if we are NOT in a tool-calling state
-                                # If tool_calls are present in the chunk, it's metadata, don't show it.
+                                # if tool_calls are present in the chunk, then not streaming the output.
                                 if not chunk.tool_calls and not tool_calls:
                                     yield content_to_append
                                     
                 except Exception as e:
-                    print(f"!!! GROQ API ERROR: {str(e)}")
-                    if hasattr(e, 'failed_generation'):
-                        print(f"!!! FAILED GENERATION: {e}")
+                    print(f"!!! GROQ API ERROR in token_stream(): {str(e)}")
                     raise e
 
-                # --- STEP 2: CHECK FOR TOOLS ---
+                # --- STEP 2: CHECK & EXECUTE TOOLS ---
                 if tool_calls:
-                    # Update internal memory with the AI's intent to call tools
                     ai_msg = AIMessage(content=full_content, tool_calls=tool_calls)
                     history.append(ai_msg)
                     current_chat.add_message(ai_msg)
@@ -87,51 +81,39 @@ class ChatService:
                         # --- WORKAROUND: Groq "Name+Args" Hallucination ---
                         raw_name = tc.get("name", "")
                         tool_args = tc.get("args", {})
+                        tool_id = tc.get("id")
                         
-                        if "{" in raw_name:
-                            print(f"  [FIX] Cleaning hallucinated name: {raw_name}")
-                            parts = raw_name.split("{", 1)
-                            clean_name = parts[0].strip()
-                            try:
-                                extra_args = json.loads("{" + parts[1])
-                                tool_args.update(extra_args)
-                            except: pass
-                        else:
-                            clean_name = raw_name
-
-                        print(f"  --> Executing: {clean_name} | Args: {tool_args}")
+                        # cleaning JSON in name strings
+                        clean_name = raw_name.split("{")[0].strip() if "{" in raw_name else raw_name
+                        tool_func = TOOL_REGISTRY.get(clean_name)
                         
-                        tool_fn = TOOL_REGISTRY.get(clean_name)
-                        if tool_fn:
-                            observation = tool_fn.invoke(tool_args)
+                        if tool_func:
+                            observation = tool_func.invoke(tool_args)
                             content_str = json.dumps(observation, ensure_ascii=False)
                             
-                            # Critical: Ensure tool_call_id exists for Groq's validator
-                            t_msg = ToolMessage(
-                                content=content_str,
-                                tool_call_id=tc.get("id") or "fallback_id", 
-                                name=clean_name
-                            )
-                            current_chat.add_message(t_msg)
-                            history.append(t_msg)
+                            # preparing and storing tool message object
+                            tool_msg = ToolMessage(content=content_str, tool_call_id=tool_id, name=clean_name)
+                            current_chat.add_message(tool_msg)
+                            history.append(tool_msg)
                             
+                            # saving into the database
                             with get_session() as session:
                                 MessageRepository.create(session, chat_id, "tool", content_str)
                                 session.commit()
                         else:
                             print(f"  !!! Tool '{clean_name}' not found in registry")
                     
-                    # Tool results added to history; loop back for the AI to answer
+                    # tool results are added to history; loop back for the AI to answer
                     continue 
 
-                # --- STEP 3: FINALIZATION ---
+                # --- STEP 3: PERSIST FINAL RESPONSE ---
                 if full_content.strip():
                     with get_session() as session:
                         MessageRepository.create(session, chat_id, "assistant", full_content)
                         session.commit()
                     current_chat.add_message(AIMessage(content=full_content))
                 
-                print(f"--- [DEBUG ITERATION {iteration} COMPLETE] ---")
+                # finally, breaking the while loop
                 break 
 
         return token_stream()

@@ -41,7 +41,7 @@ body {
     color: white; 
 }
 
-h3{
+#synapse h3{
     color: #4261af; 
     background: linear-gradient(to right, #b23ee4, #5871ff);
     background-clip: text;
