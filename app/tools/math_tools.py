@@ -1,3 +1,4 @@
+from langchain.tools import tool
 from collections import Counter
 from typing import Literal, List, Union
 import numpy as np
@@ -8,6 +9,7 @@ import math
 Number = Union[int, float]
 
 
+@tool('scientific_calculator')
 def scientific_calculator(
     operation: Literal[
         'add',
@@ -114,9 +116,7 @@ def scientific_calculator(
 
 
 
-
-
-
+@tool('calculate_statistics')
 def calculate_statistics(numbers: list) -> dict:
     """
     Compute descriptive statistics for a list of numeric values.

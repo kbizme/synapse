@@ -1,6 +1,8 @@
+from langchain.tools import tool
 import requests
 
 
+@tool('get_weather_data')
 def get_weather_data(city_name: str) -> dict:
     """
     Retrieve a concise weather summary for a given city.

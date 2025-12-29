@@ -1,3 +1,4 @@
+from langchain.tools import tool
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from dateutil.relativedelta import relativedelta 
@@ -5,6 +6,7 @@ from typing import Literal
 
 
 
+@tool('get_current_time')
 def get_current_time(timezone: str = 'UTC') -> dict:
     """
     Get the current date and time for a specified timezone.
@@ -45,6 +47,7 @@ def get_current_time(timezone: str = 'UTC') -> dict:
 
 
 
+# @tool('calculate_date_relative')
 def calculate_date_relative(base_date: str | None = None, 
                             value: int = 0, 
                             unit: Literal['days', 'weeks', 'months', 'years'] = 'days',
@@ -58,8 +61,8 @@ def calculate_date_relative(base_date: str | None = None,
     - "What date will it be 3 years after a given date?"
 
     Args:
-        base_date: Base date in ISO format (YYYY-MM-DD). Defaults to today if omitted.
-        value: Number of time units to move.
+        base_date: Base date in ISO format (YYYY-MM-DD). Defaults to today if not passed.
+        value: Number of time units to move. Use only positive values.
         unit: Time unit ("days", "weeks", "months", "years").
         direction: "future" to add time, "past" to subtract time.
 
@@ -82,7 +85,7 @@ def calculate_date_relative(base_date: str | None = None,
         start = datetime.fromisoformat(base_date) if base_date else datetime.now()
         
         # adjusting value based on direction
-        amount = value if direction == 'future' else -value
+        amount = abs(value) if direction == 'future' else -abs(value)
         
         # calculation
         if unit == 'days':
@@ -109,6 +112,7 @@ def calculate_date_relative(base_date: str | None = None,
 
 
 
+@tool('convert_time_zones')
 def convert_time_zones(timestamp: str, from_tz: str, to_tz: str) -> dict:
     """
     Convert a timestamp from one timezone to another.

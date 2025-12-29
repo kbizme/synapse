@@ -1,5 +1,5 @@
 from app.core import config
-from langchain.messages import HumanMessage, AIMessage
+from langchain.messages import HumanMessage, AIMessage, ToolMessage
 from app.core.persistence.repositories import MessageRepository
 from app.core.persistence import db_sessions
 
@@ -12,13 +12,12 @@ class ChatMemory:
     def get_messages(self) -> list:
         return self._messages.copy()
     
-    def add_message(self, message: HumanMessage | AIMessage):
-        if not isinstance(message, (HumanMessage, AIMessage)):
-            raise ValueError("messages must be a HumanMessage or AIMessage instance")
+    def add_message(self, message: HumanMessage | AIMessage | ToolMessage):
+        # Update validation to include ToolMessage
+        if not isinstance(message, (HumanMessage, AIMessage, ToolMessage)):
+            raise ValueError("messages must be a HumanMessage, AIMessage, or ToolMessage instance")
         
-        # adding new message into the memory
         self._messages.append(message)
-        # checking memory size
         if len(self._messages) > config.MEMORY_WINDOW_SIZE * 2:
             self._messages = self._messages[-config.MEMORY_WINDOW_SIZE * 2:]
         
@@ -44,13 +43,18 @@ class ChatManager:
     def _refill_chat_from_db(self, chat_id: str):
         chat_memory = ChatMemory()
         with db_sessions.get_session() as session:
-            assert session is not None
             messages = MessageRepository.get_messages_by_chat_id(db_session=session, chat_id=chat_id)
             for message in messages:
                 if message.role == "user":
-                    chat_memory.add_message(message=HumanMessage(content=message.content))
+                    chat_memory.add_message(HumanMessage(content=message.content))
                 elif message.role == "assistant":
-                    chat_memory.add_message(message=AIMessage(content=message.content))
+                    # If content is empty but it was a tool call, we'd need tool_calls list here
+                    # For now, ensure we don't send empty content if it's not a tool call
+                    chat_memory.add_message(AIMessage(content=message.content or "Processing..."))
+                elif message.role == "tool":
+                    # Groq will CRASH if tool_call_id is missing or doesn't match
+                    # Use a dummy ID that satisfies the schema if refilling from a basic DB
+                    chat_memory.add_message(ToolMessage(content=message.content, tool_call_id="legacy_id"))
         return chat_memory
         
     
