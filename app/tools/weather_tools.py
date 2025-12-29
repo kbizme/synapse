@@ -5,30 +5,8 @@ import requests
 @tool('get_weather_data')
 def get_weather_data(city_name: str) -> dict:
     """
-    Retrieve a concise weather summary for a given city.
-
-    Use this tool when the user asks about:
-    - current weather conditions
-    - temperature, humidity, wind
-    - today's sunrise or sunset
-    - short-term weather outlook, next 3-day forecast.
-
-    Args:
-        city_name: Name of the city or location.
-
-    Returns:
-        On success:
-            {
-              "ok": true,
-              "data": {
-                "location": "...",
-                "current": {...},
-                "today_stats": {...},
-                "forecast": [...]
-              }
-            }
-        On failure:
-            { "ok": false, "error": "Weather data unavailable" }
+    Fetch current weather, temperature, humidity, wind, sunrise/sunset, and 3-day forecast for a city.
+    Use for queries about current conditions or short-term outlooks.
     """
     try:
         url = f"https://wttr.in/{city_name}?format=j1"

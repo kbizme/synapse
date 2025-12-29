@@ -19,6 +19,7 @@ class ChatRepository:
     def create(db_session: Session, chat_id: str, title: str | None) -> Chat:
         chat = Chat(id=chat_id, title=title)
         db_session.add(chat)
+        db_session.commit()
         return chat
     
     @staticmethod
@@ -28,6 +29,7 @@ class ChatRepository:
             .where(Chat.id == chat_id)
             .values(updated_at=func.now())
         )
+        db_session.commit()
         
         
         
@@ -35,9 +37,14 @@ class ChatRepository:
 
 class MessageRepository:
     @staticmethod
-    def create(db_session: Session, chat_id: str, role: str, content: str) -> Message:
-        message = Message(chat_id=chat_id, role=role, content=content)
+    def create(db_session: Session, chat_id: str, role: str, content: str, 
+               tool_call_id: str | None = None, tool_name: str | None = None,
+               tool_calls: list | None = None) -> Message:
+        """Create New Entry in Messages Table"""
+        message = Message(chat_id=chat_id, role=role, content=content, 
+                          tool_call_id=tool_call_id, tool_name=tool_name, tool_calls=tool_calls)
         db_session.add(message)
+        db_session.commit()
         return message
     
     

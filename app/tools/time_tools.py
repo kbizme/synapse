@@ -7,31 +7,10 @@ from typing import Literal
 
 
 @tool('get_current_time')
-def get_current_time(timezone: str = 'UTC') -> dict:
+def get_current_time(timezone: str = 'Asia/Kolkata') -> dict:
     """
-    Get the current date and time for a specified timezone.
-
-    Use this tool when the user asks:
-    - "What time is it?"
-    - "What is the current date?"
-    - "What time is it in a specific country or city?"
-
-    Args:
-        timezone: An IANA timezone string (e.g., "UTC", "Asia/Kolkata").
-
-    Returns:
-        On success:
-            {
-              "ok": true,
-              "data": {
-                "iso": "...",
-                "readable": "...",
-                "timezone": "...",
-                "is_dst": true | false
-              }
-            }
-        On failure:
-            { "ok": false, "error": "Invalid or unsupported timezone" }
+    Get current date and time for an IANA timezone (e.g., 'UTC', 'America/New_York').
+    Defaults to 'Asia/Kolkata'. Use for 'What time is it?' or current date queries.
     """
     try:
         now = datetime.now(ZoneInfo(timezone))
@@ -47,38 +26,14 @@ def get_current_time(timezone: str = 'UTC') -> dict:
 
 
 
-# @tool('calculate_date_relative')
+@tool('calculate_date_relative')
 def calculate_date_relative(base_date: str | None = None, 
                             value: int = 0, 
                             unit: Literal['days', 'weeks', 'months', 'years'] = 'days',
                             direction: Literal['future', 'past'] = 'future') -> dict:
     """
-    Calculate a date in the past or future relative to a base date.
-
-    Use this tool when the user asks:
-    - "What date is 10 days from now?"
-    - "What was the date 2 months ago?"
-    - "What date will it be 3 years after a given date?"
-
-    Args:
-        base_date: Base date in ISO format (YYYY-MM-DD). Defaults to today if not passed.
-        value: Number of time units to move. Use only positive values.
-        unit: Time unit ("days", "weeks", "months", "years").
-        direction: "future" to add time, "past" to subtract time.
-
-    Returns:
-        On success:
-            {
-              "ok": true,
-              "data": {
-                "base_date": "...",
-                "target_date": "...",
-                "day_of_week": "...",
-                "description": "..."
-              }
-            }
-        On failure:
-            { "ok": false, "error": "Reason for failure" }
+    Calculate a past or future date relative to 'base_date' (ISO YYYY-MM-DD).
+    'base_date' defaults to today. Use for '10 days from now' or '3 weeks ago'.
     """
     try:
         # start date
@@ -115,31 +70,8 @@ def calculate_date_relative(base_date: str | None = None,
 @tool('convert_time_zones')
 def convert_time_zones(timestamp: str, from_tz: str, to_tz: str) -> dict:
     """
-    Convert a timestamp from one timezone to another.
-
-    Use this tool when the user asks:
-    - "What time is 3 PM in New York in London?"
-    - "Convert this timestamp to UTC"
-    - "Show this time in my local timezone"
-
-    Args:
-        timestamp: ISO-formatted datetime string.
-        from_tz: Source IANA timezone.
-        to_tz: Target IANA timezone.
-
-    Returns:
-        On success:
-            {
-              "ok": true,
-              "data": {
-                "source": "...",
-                "converted": "...",
-                "converted_iso": "...",
-                "target_timezone": "..."
-              }
-            }
-        On failure:
-            { "ok": false, "error": "Reason for failure" }
+    Convert an ISO timestamp from a source timezone to a target timezone.
+    Use for queries like 'What time is 3 PM in New York in London?'.
     """
     try:
         # parsing the ISO string and attach the source timezone info

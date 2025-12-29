@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey
+from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy import func
 from app.core.persistence.db import Base
@@ -25,6 +25,10 @@ class Message(Base):
     chat_id: Mapped[str] = mapped_column(String, ForeignKey("chats.id", ondelete="CASCADE"), index=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    tool_call_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    tool_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    tool_calls: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     chat = relationship("Chat", back_populates="messages")

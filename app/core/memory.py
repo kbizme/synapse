@@ -48,13 +48,13 @@ class ChatManager:
                 if message.role == "user":
                     chat_memory.add_message(HumanMessage(content=message.content))
                 elif message.role == "assistant":
-                    # If content is empty but it was a tool call, we'd need tool_calls list here
-                    # For now, ensure we don't send empty content if it's not a tool call
-                    chat_memory.add_message(AIMessage(content=message.content or "Processing..."))
+                    chat_memory.add_message(AIMessage(content=message.content or "Processing...",
+                                                      tool_calls=message.tool_calls or []))
                 elif message.role == "tool":
-                    # Groq will CRASH if tool_call_id is missing or doesn't match
-                    # Use a dummy ID that satisfies the schema if refilling from a basic DB
-                    chat_memory.add_message(ToolMessage(content=message.content, tool_call_id="legacy_id"))
+                    chat_memory.add_message(ToolMessage(content=message.content, 
+                                                        tool_call_id=message.tool_call_id or "legacy_id", 
+                                                        name=message.tool_name or "unknown_tool"))
+                                            
         return chat_memory
         
     

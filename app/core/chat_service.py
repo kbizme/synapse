@@ -13,7 +13,7 @@ class ChatService:
     def __init__(self):
         self.chat_manager = ChatManager()
 
-    def handle_user_message_stream(self, chat_id: str, prompt: str):
+    def handle_user_message(self, chat_id: str, prompt: str):
         # 1. Persistence Logic
         with get_session() as session:
             if ChatRepository.get_by_id(db_session=session, chat_id=chat_id) is None:
@@ -43,7 +43,7 @@ class ChatService:
 
                 # --- STEP 1: GENERATE & STREAM ---
                 try:
-                    for chunk in agents.get_stream(messages=history, asssitant_type=assistant_type, extra_context=extra_context):
+                    for chunk in agents.get_stream(messages=history, assitant_type=assistant_type, extra_context=extra_context):
                         # collecting tool metadata
                         if chunk.tool_calls:
                             tool_calls.extend(chunk.tool_calls)
@@ -73,6 +73,16 @@ class ChatService:
 
                 # --- STEP 2: CHECK & EXECUTE TOOLS ---
                 if tool_calls:
+                    # saving ai intent
+                    with get_session() as session:
+                        MessageRepository.create(
+                            db_session=session, 
+                            chat_id=chat_id, 
+                            role="assistant", 
+                            content=full_content or "Searching my tools...",
+                            tool_calls=tool_calls  # Pass the tool_calls list here
+                        )
+        
                     ai_msg = AIMessage(content=full_content, tool_calls=tool_calls)
                     history.append(ai_msg)
                     current_chat.add_message(ai_msg)
@@ -85,9 +95,11 @@ class ChatService:
                         
                         # cleaning JSON in name strings
                         clean_name = raw_name.split("{")[0].strip() if "{" in raw_name else raw_name
+                        # getting which tool is requested
                         tool_func = TOOL_REGISTRY.get(clean_name)
                         
                         if tool_func:
+                            # executing the requested tool
                             observation = tool_func.invoke(tool_args)
                             content_str = json.dumps(observation, ensure_ascii=False)
                             
@@ -98,8 +110,7 @@ class ChatService:
                             
                             # saving into the database
                             with get_session() as session:
-                                MessageRepository.create(session, chat_id, "tool", content_str)
-                                session.commit()
+                                MessageRepository.create(session, chat_id, "tool", content_str, tool_id, clean_name)
                         else:
                             print(f"  !!! Tool '{clean_name}' not found in registry")
                     
@@ -119,90 +130,4 @@ class ChatService:
         return token_stream()
     
     
-    
-    
-    
-    
-    def handle_user_message(self, chat_id: str, prompt: str) -> str:
-        with get_session() as session:
-            assert session is not None
-            if ChatRepository.get_by_id(db_session=session, chat_id=chat_id) is None:
-                ChatRepository.create(db_session=session, chat_id=chat_id, title=prompt[:60])
-            
-            # entering data into the messages table
-            MessageRepository.create(db_session=session, chat_id=chat_id, role="user", content=prompt)
-            # updating related chat table entry
-            ChatRepository.touch(db_session=session, chat_id=chat_id)
-        
-        # updating in-memory memory
-        current_chat = self.chat_manager.get_chat(chat_id)
-        last_message_in_memory = current_chat.get_messages()[-1]
-        if not isinstance(last_message_in_memory, HumanMessage):
-            current_chat.add_message(HumanMessage(content=prompt)) 
-        
-        # calling the ai agents
-        ai_message = agents.get_completion(all_messages=current_chat.get_messages())
-        
-        # normalizing ai output
-        content = ai_message.content
-        if isinstance(content, list):
-            content = "\n".join(str(x) for x in content)
-            
-        
-        if ai_message:
-            with get_session() as session:
-                assert session is not None
-                MessageRepository.create(
-                    db_session=session,
-                    chat_id=chat_id,
-                    role="assistant",
-                    content=content,
-                )
-                # updating related chat table entry
-                ChatRepository.touch(db_session=session, chat_id=chat_id)
-        
-        # updating in-memory memory
-        current_chat.add_message(ai_message)
-        # returning the completion
-        return content
-    
-    
-    
-    # def handle_user_message_stream(self, chat_id: str, prompt: str):
-    #     with get_session() as session:
-    #         assert session is not None
-    #         if ChatRepository.get_by_id(session, chat_id) is None:
-    #             ChatRepository.create(session, chat_id, title=prompt[:60])
-    #         # inserting the new message
-    #         MessageRepository.create(session, chat_id, "user", prompt)
-    #         ChatRepository.touch(session, chat_id)
-
-    #     # updating in-memory memory
-    #     current_chat = self.chat_manager.get_chat(chat_id)
-    #     last_message_in_memory = current_chat.get_messages()[-1]
-    #     if not isinstance(last_message_in_memory, HumanMessage):
-    #         current_chat.add_message(HumanMessage(content=prompt)) 
-
-        
-    #     def token_stream():
-    #         full_content = ""
-
-    #         for token in agents.get_completion_stream(all_messages=current_chat.get_messages()):
-    #             full_content += token
-    #             # print('token:', token, type(token))
-    #             yield token
-
-    #         if not full_content.strip():
-    #             return
-
-    #         with get_session() as session:
-    #             MessageRepository.create(
-    #                 session, chat_id, "assistant", full_content
-    #             )
-    #             ChatRepository.touch(session, chat_id)
-
-    #         current_chat.add_message(AIMessage(content=full_content))
-
-    #     return token_stream()
-            
      

@@ -8,7 +8,6 @@ const noChatsBanner = document.getElementById('no-chats-banner');
 let CURRENT_CHAT_ID;
 
 
-
 // page onload events and functions
 document.addEventListener('DOMContentLoaded', async () => {
     // loading the chat history
@@ -69,7 +68,7 @@ async function HandleSend(){
     );
 
     // calling the appropriate sendmessage function
-    await SendMessageStreaming(text);
+    await SendMessage(text);
     // SendMessage(text);
 
     // updating the chat lists
@@ -80,31 +79,52 @@ async function HandleSend(){
 
 
 
-// send message
-function SendMessage(text) {
-    // rendering user message
-    RenderUserMessage(text);
+//////////////////// STREAMING RESPONSE ////////////////////
+async function SendMessage(prompt){
+    RenderUserMessage(prompt);
 
-    // sending the api request
-    fetch("http://localhost:8000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    // creating assistant message container
+    const assistantDiv = document.createElement('div');
+    assistantDiv.className = 'message-bubble assistant-msg';
+    
+    // inserting the assistant bubble before the spacer
+    const spacer = document.getElementById('chat-spacer');
+    messagesContainer.insertBefore(assistantDiv, spacer);
+
+    // start streaming
+    const response = await fetch('http://localhost:8000/chat/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
             chat_id: CURRENT_CHAT_ID,
-            message: text
+            message: prompt
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        const aiDiv = document.createElement("div");
-        aiDiv.className = "message-bubble assistant-msg";
-        aiDiv.innerHTML = marked.parse(data.reply, {breaks: true, gfm: true});
-        messagesContainer.appendChild(aiDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    })
-    .catch(err => {
-        console.error(err);
     });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let assistantText = '';
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+            const chunk = decoder.decode(value, { stream: true });
+            assistantText += chunk;
+        }
+
+        assistantDiv.innerHTML = marked.parse(assistantText, {breaks: true, gfm: true});
+    }
+
+    // removing the spacer after response is complete
+    if (spacer) {
+        spacer.style.transition = 'height 0.5s ease';
+        spacer.style.height = '20px';
+        // removing the spacer after transition
+        setTimeout(() => spacer.remove(), 500);
+    }
 
 }
 
@@ -248,6 +268,16 @@ function RenderCurrentChatMessages(chat_data){
 
     // rendering the current chat messages inside the container
     chat_data.messages.forEach(msg => {
+        if (msg.role === 'tool') return;
+        if (msg.role === 'assistant'){
+            if (msg.content === 'Searching my tools...' || msg.tool_calls){
+                console.log('here');
+                return;
+            }
+        }
+        if (!msg.content) return;
+
+        // now, constructing the message bubble
         const div = document.createElement('div');
         div.className = msg.role === 'user' ? 'message-bubble user-msg' : 'message-bubble assistant-msg';
         div.innerHTML = marked.parse(msg.content, {breaks: true, gfm: true});
@@ -257,55 +287,6 @@ function RenderCurrentChatMessages(chat_data){
 
 }
 
-
-//////////////////// STREAMING RESPONSE ////////////////////
-async function SendMessageStreaming(prompt){
-    RenderUserMessage(prompt);
-
-    // creating assistant message container
-    const assistantDiv = document.createElement('div');
-    assistantDiv.className = 'message-bubble assistant-msg';
-    
-    // inserting the assistant bubble before the spacer
-    const spacer = document.getElementById('chat-spacer');
-    messagesContainer.insertBefore(assistantDiv, spacer);
-
-    // start streaming
-    const response = await fetch('http://localhost:8000/chat/stream', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            chat_id: CURRENT_CHAT_ID,
-            message: prompt
-        })
-    });
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantText = '';
-
-    while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        if (value) {
-            const chunk = decoder.decode(value, { stream: true });
-            assistantText += chunk;
-        }
-
-        assistantDiv.innerHTML = marked.parse(assistantText, {breaks: true, gfm: true});
-    }
-
-    // removing the spacer after response is complete
-    if (spacer) {
-        spacer.style.transition = 'height 0.5s ease';
-        spacer.style.height = '20px';
-        // removing the spacer after transition
-        setTimeout(() => spacer.remove(), 500);
-    }
-
-}
 
 
 

@@ -9,37 +9,15 @@ import math
 Number = Union[int, float]
 
 
+
 @tool('scientific_calculator')
 def scientific_calculator(
-    operation: Literal[
-        'add',
-        'subtract',
-        'multiply',
-        'divide',
-        'power',
-        'sqrt',
-        'log',
-        'sin',
-        'cos',
-        'tan'
-    ],
+    operation: Literal['add', 'subtract', 'multiply', 'divide', 'power', 'sqrt', 'log', 'sin', 'cos', 'tan'],
     operands: List[Number]) -> dict:
     """
-    Perform a scientific or arithmetic calculation using explicit operations.
-
-    Use this tool when the user asks for mathematical computation that requires
-    precise numeric evaluation (e.g., square roots, powers, trigonometric functions,
-    logarithms, or arithmetic).
-
-    Args:
-        operation: The mathematical operation to perform.
-        operands: A list of numeric operands required for the operation.
-
-    Returns:
-        On success:
-            { 'ok': true, 'data': { 'operation': str, 'operands': list, 'result': number } }
-        On failure:
-            { 'ok': false, 'error': str }
+    Perform arithmetic or scientific calculations. 
+    Use for: powers, roots, trig (sin/cos/tan), logs, or basic math.
+    'operands' is a list: [val1, val2] for binary ops, [val] for unary (sqrt/sin/cos/tan/log).
     """
     try:
         if not operands:
@@ -119,30 +97,8 @@ def scientific_calculator(
 @tool('calculate_statistics')
 def calculate_statistics(numbers: list) -> dict:
     """
-    Compute descriptive statistics for a list of numeric values.
-
-    Use this tool when the user provides a dataset and asks for:
-    - summary statistics
-    - mean, median, mode
-    - spread or dispersion (std, variance, range, IQR)
-    - percentiles or basic aggregations
-
-    Args:
-        numbers: A list of integers or floats.
-
-    Returns:
-        On success:
-            {
-              "ok": true,
-              "data": {
-                "central_tendency": {...},
-                "dispersion": {...},
-                "percentiles": {...},
-                "aggregations": {...}
-              }
-            }
-        On failure:
-            { "ok": false, "error": "Reason for failure" }
+    Calculate mean, median, mode, std dev, variance, range, IQR, and percentiles for a dataset.
+    Use when a user provides a list of numbers and asks for summary statistics or data spread.
     """
     try:
         if not numbers:
