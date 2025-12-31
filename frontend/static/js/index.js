@@ -6,6 +6,7 @@ const noChatsBanner = document.getElementById('no-chats-banner');
 
 
 let CURRENT_CHAT_ID;
+let PENDING_FILE = null;
 
 
 // page onload events and functions
@@ -53,6 +54,8 @@ async function HandleSend(){
         CURRENT_CHAT_ID = crypto.randomUUID();
     }
 
+    const fileToSend = PENDING_FILE;
+
     // removing the welcome box
     const welcome = document.getElementById("welcome-message");
     if (welcome) welcome.remove();
@@ -68,8 +71,10 @@ async function HandleSend(){
     );
 
     // calling the appropriate sendmessage function
-    await SendMessage(text);
-    // SendMessage(text);
+    await SendMessage(text, fileToSend);
+    // clearing the file chip
+    removePendingFile();
+
 
     // updating the chat lists
     setTimeout(()=>{
@@ -80,7 +85,7 @@ async function HandleSend(){
 
 
 //////////////////// STREAMING RESPONSE ////////////////////
-async function SendMessage(prompt){
+async function SendMessage(prompt, file=null){
     RenderUserMessage(prompt);
 
     // creating assistant message container
@@ -91,21 +96,62 @@ async function SendMessage(prompt){
     const spacer = document.getElementById('chat-spacer');
     messagesContainer.insertBefore(assistantDiv, spacer);
 
-    // start streaming
-    const response = await fetch('http://localhost:8000/chat/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            chat_id: CURRENT_CHAT_ID,
-            message: prompt
-        })
-    });
+    let fetchOptions = {};
+    let url = '';
 
+    // DYNAMIC SELECTION
+    if (file) {
+        // Path A: Multipart for Files
+        url = 'http://localhost:8000/chat/upload-and-query';
+        const formData = new FormData();
+        formData.append('chat_id', CURRENT_CHAT_ID);
+        formData.append('message', prompt);
+        formData.append('file', file);
+        
+        fetchOptions = {
+            method: 'POST',
+            body: formData 
+        };
+    } else {
+        // Path B: Standard JSON for Text
+        url = 'http://localhost:8000/chat/';
+        fetchOptions = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chat_id: CURRENT_CHAT_ID,
+                message: prompt
+            })
+        };
+    }
+
+    /// hitting the backend api
+    try {
+        const response = await fetch(url, fetchOptions);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // calling stream processing function
+        await ProcessStream(response, assistantDiv);
+
+    } catch (error) {
+        console.error("Fetch error:", error);
+        assistantDiv.innerHTML = "Sorry, something went wrong. Please try again.";
+    }    
+}
+
+
+// this function renders the received streamed response
+async function ProcessStream(response, assistantDiv) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let assistantText = '';
+    const spacer = document.getElementById('chat-spacer');
+    const initialSpacerHeight = spacer ? parseInt(spacer.style.height) : 0;
 
     while (true) {
         const { value, done } = await reader.read();
@@ -116,19 +162,24 @@ async function SendMessage(prompt){
         }
 
         assistantDiv.innerHTML = marked.parse(assistantText, {breaks: true, gfm: true});
+        
+        if (spacer) {
+            // As the assistant message grows, shrink the spacer by that amount
+            const currentMessageHeight = assistantDiv.offsetHeight;
+            const newHeight = Math.max(0, initialSpacerHeight - currentMessageHeight);
+            spacer.style.height = `${newHeight}px`;
+        }
     }
 
     // removing the spacer after response is complete
     if (spacer) {
-        spacer.style.transition = 'height 0.5s ease';
-        spacer.style.height = '20px';
-        // removing the spacer after transition
-        setTimeout(() => spacer.remove(), 500);
+        spacer.style.transition = 'height 0.4s ease-out';
+        spacer.style.height = '0px';
+        setTimeout(() => spacer.remove(), 400);
     }
-
 }
 
-
+//////////////////////////////////////////////////////////////////////////////////
 
 function createNewChat() {
     // clearing active chat marker
@@ -306,13 +357,13 @@ function RenderUserMessage(text){
     spacer.id = 'chat-spacer';
 
     // setting height to slightly less than container to keep the message perfectly at top
-    const spacerGap = 200;
+    const spacerGap = 100;
     spacer.style.height = `${messagesContainer.clientHeight - spacerGap}px`;
     messagesContainer.appendChild(spacer);
 
     // forcing the browser to recalculate the height
     setTimeout(() => {
-        const gap = 40;
+        const gap = 30;
         const targetTop = userDiv.offsetTop - gap;
         messagesContainer.scrollTo({
             top: targetTop,
@@ -324,4 +375,35 @@ function RenderUserMessage(text){
 
 function ScrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    console.log('i ran')
+}
+
+
+
+// File Upload Handling
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    PENDING_FILE = file; 
+    
+    // clearing the bar
+    const previewBar = document.getElementById('file-preview-bar');
+    previewBar.innerHTML = ''; 
+
+    // shwoing selected file preview with a remove option
+    const chip = document.createElement('div');
+    chip.className = `file-chip ready`;
+    chip.innerHTML = `
+        <span>📄 ${file.name}</span>
+        <span class="remove-file" onclick="removePendingFile()">×</span>
+    `;
+    previewBar.appendChild(chip);
+    // resetting the file input value
+    event.target.value = '';
+}
+
+function removePendingFile() {
+    PENDING_FILE = null;
+    document.getElementById('file-preview-bar').innerHTML = '';
 }

@@ -45,9 +45,17 @@
             -->
             </div>
 
-            <div id="input-area">
+            <div id="input-area" style="flex-direction: column;"> 
+                <div id="file-preview-bar"></div> 
                 <div class="input-container">
+                    <input type="file" id="file-upload" style="display: none;" accept=".pdf,.txt" onchange="handleFileUpload(event)">
+                    
+                    <button id="upload-btn" onclick="document.getElementById('file-upload').click()" title="Upload Document">
+                        <img src="/static/images/file.png"/> 
+                    </button>
+                    
                     <input type="text" id="user-input" placeholder="Send a message...">
+                    
                     <button id="send-btn" onclick="HandleSend()">➤</button>
                 </div>
             </div>

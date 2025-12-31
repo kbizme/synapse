@@ -226,8 +226,16 @@ article.text-heading img{
     white-space: pre-wrap;
 }
 
+/* Assistant message styling */
+.assistant-msg hr {
+    border: none;
+    height: 2px;
+    background-color: #4a4a4a;
+    margin: .5em 0;
+}
+/*****************************/
 #welcome-message{
-    margin: 200px auto;
+    margin: 260px auto 100px;
     text-align: center;
 }
 
@@ -255,17 +263,40 @@ article.text-heading img{
     position: relative;
     width: 100%;
     max-width: 800px;
+    display: flex;
+    align-items: center;
+    background-color: #242424;
+    border: 1px solid #2c2c2c;
+    border-radius: 8px;
+    padding-left: 10px; /* Space for the paperclip */
+}
+
+#upload-btn {
+    background: none;
+    border: none;
+    color: #acacbe;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+#upload-btn img{
+    width: 20px;
+    height: 20px;
 }
 
 #user-input {
     width: 100%;
+    flex-grow: 1;
     padding: 12px 45px 12px 15px;
     background-color: #242424;
-    border: 1px solid #2c2c2c;
     border-radius: 8px;
     color: white;
     font-size: 17px;
     outline: none;
+    border: none;;
     box-shadow: 0 0 15px rgba(0,0,0,0.1);
 }
 
@@ -281,7 +312,35 @@ article.text-heading img{
     font-size: 1.2rem;
 }
 
+/* File Preview Bar - sits right above the input box */
+#file-preview-bar {
+    display: flex;
+    gap: 10px;
+    padding: 5px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
 
+.file-chip {
+    background-color: #2b2c2f;
+    border: 1px solid #4d4d4f;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-chip.uploading { border-color: #4261af; color: #767685; }
+.file-chip.ready { border-color: #28a745; color: #fff; }
+.file-chip.failed { border-color: #dc3545; color: #fff; }
+
+.remove-file {
+    cursor: pointer;
+    font-weight: bold;
+    color: #ff4d4d;
+}
 
 /* Custom Scrollbar Styles */
 ::-webkit-scrollbar {
