@@ -102,7 +102,7 @@ async function SendMessage(prompt, file=null){
     // DYNAMIC SELECTION
     if (file) {
         // Path A: Multipart for Files
-        url = 'http://localhost:8000/chat/upload-and-query';
+        url = 'http://localhost:8000/upload-and-query';
         const formData = new FormData();
         formData.append('chat_id', CURRENT_CHAT_ID);
         formData.append('message', prompt);
@@ -267,6 +267,7 @@ function HighlightActiveChat(chat_id=undefined){
     try{
         if (chat_id){
             const currentChatLi = document.getElementById(chat_id)
+            if (!currentChatLi) return;
             currentChatLi.classList.add('active');
             document.title = currentChatLi.getAttribute('title');
 

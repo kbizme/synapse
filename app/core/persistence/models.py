@@ -16,6 +16,8 @@ class Chat(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     messages = relationship("Message", back_populates="chat", cascade="all, delete-orphan")
+    documents = relationship("Document", back_populates="chat", cascade="all, delete-orphan")
+
 
 
 class Message(Base):
@@ -32,3 +34,19 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     chat = relationship("Chat", back_populates="messages")
+
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[str] = mapped_column(String, ForeignKey("chats.id", ondelete="CASCADE"), index=True)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    # collection_name will match the ChromaDB collection ID for strict isolation
+    collection_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    chat = relationship("Chat", back_populates="documents")

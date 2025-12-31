@@ -99,6 +99,9 @@ class ChatService:
                         tool_func = TOOL_REGISTRY.get(clean_name)
                         
                         if tool_func:
+                            if clean_name == 'query_knowledge_base':
+                                tool_args['chat_id'] = chat_id
+                                
                             # executing the requested tool
                             observation = tool_func.invoke(tool_args)
                             content_str = json.dumps(observation, ensure_ascii=False)

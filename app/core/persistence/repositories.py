@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.core.persistence.models import Chat, Message
+from app.core.persistence.models import Chat, Message, Document
 from sqlalchemy.sql import func
 from sqlalchemy import update
 
@@ -56,3 +56,15 @@ class MessageRepository:
                 .order_by(Message.created_at.asc(), Message.id.asc())
                 .all()
             )
+        
+    
+
+class DocumentRepository:
+    @staticmethod
+    def create(db_session: Session, chat_id: str, filename: str, 
+               collection_name: str, file_path: str) -> Document:
+        new_document = Document(chat_id=chat_id, filename=filename, 
+                            collection_name=collection_name, file_path=file_path)
+        db_session.add(new_document)
+        db_session.commit()
+        return new_document

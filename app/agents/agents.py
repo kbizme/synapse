@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage
 from app.tools.weather_tools import get_weather_data
 from app.tools.time_tools import get_current_time, calculate_date_relative, convert_time_zones
 from app.tools.math_tools import scientific_calculator, calculate_statistics
-
+from app.tools.knowledge_base import query_knowledge_base
 
 load_dotenv()
 
@@ -17,6 +17,7 @@ TOOLS = [
     convert_time_zones,
     scientific_calculator,
     calculate_statistics,
+    query_knowledge_base
 ]
 
 
