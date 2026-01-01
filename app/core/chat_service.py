@@ -101,9 +101,10 @@ class ChatService:
                         if tool_func:
                             if clean_name == 'query_knowledge_base':
                                 tool_args['chat_id'] = chat_id
-                                
+
                             # executing the requested tool
                             observation = tool_func.invoke(tool_args)
+                                
                             content_str = json.dumps(observation, ensure_ascii=False)
                             
                             # preparing and storing tool message object
@@ -115,7 +116,7 @@ class ChatService:
                             with get_session() as session:
                                 MessageRepository.create(session, chat_id, "tool", content_str, tool_id, clean_name)
                         else:
-                            print(f"  !!! Tool '{clean_name}' not found in registry")
+                            print(f"!!! Tool '{clean_name}' not found in registry")
                     
                     # tool results are added to history; loop back for the AI to answer
                     continue 

@@ -8,11 +8,13 @@ import os
 class KnowledgeBaseInput(BaseModel):
     query: str = Field(description="The search query to look up in the uploaded documents.")
 
+    class Config:
+        extra = 'allow'
 
 EMBEDDINGS = HuggingFaceEmbeddings(model_name='all-MiniLM-L6-v2')
 
 
-@tool('query_knowledge_base')
+@tool('query_knowledge_base', args_schema=KnowledgeBaseInput)
 def query_knowledge_base(query: str, chat_id: str):
     """
     Search through the user's uploaded documents (PDFs, text files) to find answers 
