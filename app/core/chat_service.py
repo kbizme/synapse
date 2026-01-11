@@ -14,7 +14,7 @@ class ChatService:
         self.chat_manager = ChatManager()
 
     def handle_user_message(self, chat_id: str, prompt: str):
-        # 1. Persistence Logic
+        # persistence logic
         with get_session() as session:
             if ChatRepository.get_by_id(db_session=session, chat_id=chat_id) is None:
                 ChatRepository.create(db_session=session, chat_id=chat_id, title=prompt[:60])
@@ -32,7 +32,7 @@ class ChatService:
         extra_context = None
         
         # dynamic intent detection
-        # TODO: RAG
+        # TODO [Optional]: here, we can add Dynamic System Controlled RAG, based on prompt analysis
         
         def token_stream():
             history = current_chat.get_messages()
@@ -80,7 +80,7 @@ class ChatService:
                             chat_id=chat_id, 
                             role="assistant", 
                             content=full_content or "Searching my tools...",
-                            tool_calls=tool_calls  # Pass the tool_calls list here
+                            tool_calls=tool_calls 
                         )
         
                     ai_msg = AIMessage(content=full_content, tool_calls=tool_calls)
