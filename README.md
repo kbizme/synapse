@@ -18,11 +18,11 @@ The project intentionally prioritizes **clarity, modularity, and explainability*
 
 - 🧠 **Conversational Memory**
   - Agent remembers recent messages in the same chat
-  - Memory is scoped to a single session (no global persistence)
+  - Memory is scoped to a single user multi-chat session (with persistence as well)
 
 - 🧩 **Modular Architecture**
-  - Clean separation between API layer, agent logic, tools, and infrastructure
-  - Designed to be easily extended (auth, multi-user, persistence, LangGraph)
+  - Clean separation between API layer, Agent logic, Tools, and Orchestration
+  - Designed to be easily extended (auth, multi-user, LangGraph)
 
 - 🌐 **Minimal Frontend**
   - Vanilla HTML, CSS, and JavaScript
@@ -84,14 +84,13 @@ If no document is uploaded, the agent behaves like a normal conversational LLM.
 
 ## 💾 Memory Model
 
-- Short-term, in-process memory
+- Short-term, thread-safe in-process memory
 - Maintains recent conversation turns
-- Scoped to a single chat session
-- No persistence across restarts
+- Scoped to single user multi chat management simultaneously
+- Persistence across restarts
 
 This design keeps behavior predictable while remaining extensible to:
 
-- Redis / DB-backed memory
 - LangGraph checkpoints
 - Multi-user isolation (future scope)
 
@@ -99,29 +98,57 @@ This design keeps behavior predictable while remaining extensible to:
 
 - Authentication & authorization
 - Multi-user support
-- Persistent storage
-- Streaming responses
-- Advanced UI frameworks
+- Advanced UI frameworks (Like. React or Angular)
 
 These are intentionally excluded to keep the project focused and explainable.
-
-## ▶️ Running the Application (Local)
-
-1. Clone the repository
-2. Create a virtual environment
-3. Install dependencies
-4. Add Groq API key to `.env` as `GROQ_API_KEY`=`...`
-5. Start the FastAPI server
-6. Open the frontend in a browser
-
-(Exact commands will be added once implementation is complete.)
-
----
 
 ## 🔮 Future Extensions
 
 - Multi-user support with authentication
-- Persistent memory using Redis or database
+- System Controlled Adaptive RAG Implementation
 - LangGraph-based orchestration
-- Streaming responses
-- Tool expansion (web search, code execution, etc.)
+- Replacing Streaming responses using SSE (Server Sent Events)
+- Tool expansion (web search, sandboxed code execution, etc.)
+
+## ▶️ Running the Application (Local)
+
+1. Clone the repository
+2. Create a virtual environment: `virtualenv .pyenv`
+3. Activate the virtual environment:
+    - On Windows: `.pyenv/scripts/activate`
+    - On Linux/Mac: `source .pyenv/bin/activate`
+4. Install dependencies: `pip install -r requirements.txt`
+5. Create a `.env` file in the root project folder.
+   - Add Groq API key to `.env` as `GROQ_API_KEY`=`...`
+   - Optionally, You can add these LangSmith Tracing parameters as well:
+
+      - `LANGCHAIN_TRACING_V2`=`true`
+      - `LANGCHAIN_ENDPOINT`=`https://api.smith.langchain.com`
+      - `LANGCHAIN_API_KEY`=`...`
+      - `LANGCHAIN_PROJECT`=`synapse`
+6. Start the FastAPI server
+    - Open a Terminal and run this command: `uvicorn app.main:app --reload`
+7. Open another Terminal and start the Frontend server using Python http:
+   - Go to `frontend` folder: `cd frontend`
+   - Run `python -m http.server 5500`
+
+8. Open the frontend in a browser and navigate to: `http://127.0.0.1:5500`
+9. OR You can test the FastAPI endspoints on: `http://127.0.0.1:8000/docs`
+
+---
+
+## 🖼️ Example Screenshots
+
+- Frontend UI Pages of the Synapse Application
+  
+  ![Home Page](ui-screenshots/screenshot_0.png)
+
+- Chat Screenshots
+  
+  ![Chat UI Screenshot](ui-screenshots/screenshot_1.png)
+  
+  ![Chat UI Screenshot](ui-screenshots/screenshot_2.png)
+
+- FastAPI Endpoints
+
+  ![Chat UI Screenshot](ui-screenshots/screenshot_3.png)
